@@ -1,5 +1,4 @@
 import ReactModal from 'react-modal';
-import { useState } from 'react';
 
 const customStyles = {
   content: {
