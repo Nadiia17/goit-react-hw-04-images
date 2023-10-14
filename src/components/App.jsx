@@ -1,4 +1,4 @@
-import { Component } from 'react';
+import { useEffect, useState } from 'react';
 import toast, { Toaster } from 'react-hot-toast';
 import { AppContainer } from './Layout';
 import { Searchbar } from './Searchbar/Searchbar';
@@ -7,84 +7,71 @@ import { ImageGallery } from './ImageGallery/ImageGallery';
 import { Button } from './Button/Button';
 import { Loader } from './Loader/Loader';
 
-export class App extends Component {
-  state = {
-    query: '',
-    page: 1,
-    images: [],
-    loading: false,
-    error: false,
-    totalHits: 0,
-  };
+export const App = () => {
+  const [query, setQuery] = useState('');
+  const [page, setPage] = useState(1);
+  const [images, setImages] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(false);
+  const [totalHits, setTotalHits] = useState(0);
 
-  handleSubmit = query => {
-    const trimmedQuery = query.trim();
+  const handleSubmit = newQuery => {
+    const trimmedQuery = newQuery.trim();
 
     if (trimmedQuery === '') {
       toast.error('Please enter a search query!');
       return;
     }
 
-    this.setState({
-      query: trimmedQuery,
-      page: 1,
-      images: [],
-    });
+    setQuery(trimmedQuery);
+    setPage(1);
+    setImages([]);
   };
 
-  handleLoadMore = () => {
-    this.setState(prevState => ({ page: prevState.page + 1 }));
+  const handleLoadMore = () => {
+    setPage(prevPage => prevPage + 1);
   };
 
-  componentDidUpdate(prevProps, prevState) {
-    if (
-      prevState.query !== this.state.query ||
-      prevState.page !== this.state.page
-    ) {
-      this.fetchImages();
-    }
-  }
+  useEffect(() => {
+    const fetchImages = async () => {
+      try {
+        // Starting loading
+        setLoading(true);
+        setError(false);
 
-  fetchImages = async () => {
-    try {
-      // Starting loading
-      this.setState({ loading: true, error: false });
-
-      // API request
-      const data = await searchByQuery(this.state.query, this.state.page);
-      if (data.hits.length === 0) {
-        toast.error('No images found for your query!');
-        return;
+        // API request
+        const data = await searchByQuery(query, page);
+        if (data.hits.length === 0) {
+          toast.error('No images found for your query!');
+          return;
+        }
+        // Updating state with data
+        setImages(prevImages => [...prevImages, ...data.hits]);
+        setTotalHits(data.totalHits);
+      } catch (error) {
+        // Handling error
+        console.error('Error fetching data: ', error);
+        setError(true);
+        toast.error('Error fetching images, please try again!');
+      } finally {
+        // Ending loading
+        setLoading(false);
       }
-      // Updating state with data
-      this.setState(prevState => ({
-        images: [...prevState.images, ...data.hits],
-        totalHits: data.totalHits,
-      }));
-    } catch (error) {
-      // Handling error
-      console.error('Error fetching data: ', error);
-      this.setState({ error: true });
-      toast.error('Error fetching images, please try again!');
-    } finally {
-      // Ending loading
-      this.setState({ loading: false });
+    };
+    if (query) {
+      fetchImages();
     }
-  };
+  }, [query, page]);
 
-  render() {
-    const { images, loading, error, totalHits } = this.state;
-    return (
-      <AppContainer>
-        <Searchbar onSubmit={this.handleSubmit} />
-        {loading && <Loader />}
-        <ImageGallery images={this.state.images} />
-        {images.length > 0 &&
-          images.length < totalHits &&
-          !loading &&
-          !error && <Button onClick={this.handleLoadMore}>Load more</Button>}
-        <Toaster position="top-right" />
-      </AppContainer>
-    );
-  }
-}
+  return (
+    <AppContainer>
+      <Searchbar onSubmit={handleSubmit} />
+      {loading && <Loader />}
+      <ImageGallery images={images} />
+      {images.length > 0 && images.length < totalHits && !loading && !error && (
+        <Button onClick={handleLoadMore}>Load more</Button>
+      )}
+      <Toaster position="top-right" />
+    </AppContainer>
+  );
+};

@@ -1,5 +1,5 @@
 import ReactModal from 'react-modal';
-import { Component } from 'react';
+import { useState } from 'react';
 
 const customStyles = {
   content: {
@@ -17,19 +17,15 @@ const customStyles = {
 
 ReactModal.setAppElement('#root');
 
-export class Modal extends Component {
-  render() {
-    const { image, isOpen, onCloseModal } = this.props;
-
-    return (
-      <ReactModal
-        isOpen={isOpen}
-        onRequestClose={onCloseModal}
-        style={customStyles}
-        contentLabel="Image Modal"
-      >
-        <img src={image.largeImageURL} alt={image.tags} />
-      </ReactModal>
-    );
-  }
-}
+export const Modal = ({ image, isOpen, onCloseModal }) => {
+  return (
+    <ReactModal
+      isOpen={isOpen}
+      onRequestClose={onCloseModal}
+      style={customStyles}
+      contentLabel="Image Modal"
+    >
+      <img src={image.largeImageURL} alt={image.tags} />
+    </ReactModal>
+  );
+};
